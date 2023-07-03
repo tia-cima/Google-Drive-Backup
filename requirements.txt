@@ -1,0 +1,5 @@
+google-api-python-client==2.26.1
+google-auth-oauthlib==0.4.6
+google-auth-httplib2==0.1.0
+google-auth==1.35.0
+sendgrid==6.9.2
