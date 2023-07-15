@@ -16,7 +16,7 @@ Unable to find a program that backs up my Google Drive folder on the internet, I
 - 🗜️ Zips the downloaded data for efficient storage.
 - 📧 Emails notifications at the start and end of the backup process, as well as when a new token is needed for Google Drive API.
 - 🧹 Automatically deletes the downloaded data after a successful backup.
-
+- 💾 Save space and retain only a chosen amount of backups by eliminating older ones.
 
 ## 🔍 Prerequisites
 
@@ -112,6 +112,8 @@ Before running the script, ensure that you have the following prerequisites:
     - `to_email`: The email address that will receive notifications.
     - `client_json`: The path to your Google client json file. This is used to authenticate the script with Google Drive.
     - `hour` and `minute`: The time at which the script will run every day.
+    - `hour` and `minute`: The time at which the script will run every day.
+    - `retention_days`: How many days to retain old backups. For istance, if you want to retain 5 days of backup, you'll have 5 zip in total and everytime the program creates a new zip, the oldest one will be eliminated.
     
     Replace the arguments with your desired settings. The script will run continuously and start the backup process at the given hour and minute.
 
@@ -119,8 +121,12 @@ Before running the script, ensure that you have the following prerequisites:
 ## 💡 Recommended Settings
 
 The 'token.pickle' file, which is used for Google Drive authentication, will be saved in the directory above the download and backup folders. For instance, if your download folder is "C:\Users\your_user\Desktop\test\d" and your backup folder is "C:\Users\your_user\Desktop\test\b", the 'token.pickle' file will be saved in "C:\Users\your_user\Desktop\test". Please ensure that you have write access to this directory.
-
 I also recommend to put, in the future 'token.pickle' folder, the 'client_json...' file, in order to have all in one single folder.
+
+
+## 📒 Notes
+
+Unfortunately, this application will result in google’s cloud environment as a test app, so every 7 days a new authentication will be required, blocking the script. You will then need, every 7 days, to access the machine to reconfirm the token.
 
 
 ## 📄 License

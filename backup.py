@@ -7,7 +7,6 @@ import re
 import time
 import zipfile
 from shutil import rmtree
-
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -110,6 +109,16 @@ def zip_data(backup_folder, download_folder):
     print("Zipping process ends.")
     return backup_folder + '.zip'
 
+def delete_old_files(folder, retention_days):
+    current_time = time.time()
+    for file_name in os.listdir(folder):
+        file_path = os.path.join(folder, file_name)
+        file_creation_time = os.path.getmtime(file_path)
+        if current_time - file_creation_time > retention_days * 24 * 60 * 60:
+            if os.path.isfile(file_path):
+                print(f"Deleting old file: {file_name}")
+                os.remove(file_path)
+
 def backup_drive(backup_folder, download_folder, from_email, to_email, sendgrid_api_key, client_json):
     token_path = os.path.join(os.path.dirname(download_folder), 'token.pickle')
     creds = check_creds(client_json, from_email, to_email, sendgrid_api_key, token_path)
@@ -133,9 +142,7 @@ def backup_drive(backup_folder, download_folder, from_email, to_email, sendgrid_
                        f"<div style='background-color: green;'>Your backup was successful. The final backup size is {size_after:.2f} GB.</div>", 
                        from_email, to_email, sendgrid_api_key)
     except Exception as e:
-        send_email("[Failed] Google Drive backup failed", 
-                   f"<div style='background-color: red;'>Your backup failed. Error: {str(e)}</div>", 
-                   from_email, to_email, sendgrid_api_key)
+        send_email("[Failed] Google Drive backup failed", f"<div style='background-color: red;'>Your backup failed. Error: {str(e)}</div>", from_email, to_email, sendgrid_api_key)
     finally:
         for filename in os.listdir(download_folder):
             file_path = os.path.join(download_folder, filename)
@@ -157,7 +164,8 @@ if __name__ == '__main__':
     parser.add_argument('--client_json', required=True, help='Path to your Google client json')
     parser.add_argument('--hour', type=int, required=True, help='Hour to start the backup')
     parser.add_argument('--minute', type=int, required=True, help='Minute to start the backup')
-    
+    parser.add_argument('--retention_days', type=int, help='How many days to retain old files')
+
     args = parser.parse_args()
 
     DOWNLOAD_FOLDER = args.download_folder
@@ -168,9 +176,14 @@ if __name__ == '__main__':
     CLIENT_JSON = args.client_json
     HOUR = args.hour
     MINUTE = args.minute
+    RETENTION_DAYS = args.retention_days
 
     while True:
         current_time = datetime.datetime.now()
         if (current_time.hour == HOUR and current_time.minute == MINUTE):
-            backup_drive(BACKUP_FOLDER, DOWNLOAD_FOLDER, FROM_EMAIL, TO_EMAIL, SENDGRID_API_KEY, CLIENT_JSON)
-        time.sleep(60)
+            print("Let's start")
+            backup_drive(os.path.join(BACKUP_FOLDER, current_time.strftime("%Y-%m-%d_%H-%M-%S")), DOWNLOAD_FOLDER, FROM_EMAIL, TO_EMAIL, SENDGRID_API_KEY, CLIENT_JSON)
+            print("Backup finished. Starting deleting old backups")
+            delete_old_files(BACKUP_FOLDER, RETENTION_DAYS)
+            print("Finishing deleting old backups. See ya tomorrow at ", HOUR, " ", MINUTE)
+        time.sleep(10)
