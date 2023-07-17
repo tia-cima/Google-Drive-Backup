@@ -33,22 +33,25 @@ def calculate_size(file_path):
         return total_size / (1024 ** 3)  # size in GB
 
 def send_email(subject, content, from_email, to_email, sendgrid_api_key):
-    message = Mail(
-        from_email=from_email,
-        to_emails=to_email,
-        subject=subject,
-        html_content=content
-    )
-    try:
-        sg = SendGridAPIClient(sendgrid_api_key)
-        response = sg.send(message)
-    except Exception as e:
-        print(str(e))
+    if sendgrid_api_key and from_email and to_email:
+        message = Mail(
+            from_email=from_email,
+            to_emails=to_email,
+            subject=subject,
+            html_content=content
+        )
+        try:
+            sg = SendGridAPIClient(sendgrid_api_key)
+            response = sg.send(message)
+        except Exception as e:
+            print(str(e))
+    else:
+        return
 
-def check_creds(client_json, from_email, to_email, sendgrid_api_key, token_path):
+def check_creds(client_json, from_email, to_email, sendgrid_api_key):
     creds = None
-    if os.path.exists(token_path):
-        with open(token_path, 'rb') as token:
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -59,7 +62,7 @@ def check_creds(client_json, from_email, to_email, sendgrid_api_key, token_path)
                        from_email, to_email, sendgrid_api_key)
             flow = InstalledAppFlow.from_client_secrets_file(client_json, SCOPES)
             creds = flow.run_local_server(port=0)
-        with open(token_path, 'wb') as token:
+        with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
     return creds
 
@@ -120,8 +123,7 @@ def delete_old_files(folder, retention_days):
                 os.remove(file_path)
 
 def backup_drive(backup_folder, download_folder, from_email, to_email, sendgrid_api_key, client_json):
-    token_path = os.path.join(os.path.dirname(download_folder), 'token.pickle')
-    creds = check_creds(client_json, from_email, to_email, sendgrid_api_key, token_path)
+    creds = check_creds(client_json, from_email, to_email, sendgrid_api_key)
 
     service = build('drive', 'v3', credentials=creds)
     try:
@@ -158,25 +160,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--download_folder', required=True, help='Folder where files will be downloaded')
     parser.add_argument('--backup_folder', required=True, help='Folder where backup will be saved')
-    parser.add_argument('--sendgrid_api_key', required=True, help='Your SendGrid API key')
-    parser.add_argument('--from_email', required=True, help='Email to send notifications from')
-    parser.add_argument('--to_email', required=True, help='Email to send notifications to')
     parser.add_argument('--client_json', required=True, help='Path to your Google client json')
     parser.add_argument('--hour', type=int, required=True, help='Hour to start the backup')
     parser.add_argument('--minute', type=int, required=True, help='Minute to start the backup')
     parser.add_argument('--retention_days', type=int, help='How many days to retain old files')
+    parser.add_argument('--sendgrid_api_key', required=False, help='Your SendGrid API key')
+    parser.add_argument('--from_email', required=False, help='Email to send notifications from')
+    parser.add_argument('--to_email', required=False, help='Email to send notifications to')
 
     args = parser.parse_args()
 
     DOWNLOAD_FOLDER = args.download_folder
     BACKUP_FOLDER = args.backup_folder
-    SENDGRID_API_KEY = args.sendgrid_api_key
-    FROM_EMAIL = args.from_email
-    TO_EMAIL = args.to_email
     CLIENT_JSON = args.client_json
     HOUR = args.hour
     MINUTE = args.minute
     RETENTION_DAYS = args.retention_days
+    SENDGRID_API_KEY = args.sendgrid_api_key
+    FROM_EMAIL = args.from_email
+    TO_EMAIL = args.to_email
 
     while True:
         current_time = datetime.datetime.now()
@@ -185,5 +187,5 @@ if __name__ == '__main__':
             backup_drive(os.path.join(BACKUP_FOLDER, current_time.strftime("%Y-%m-%d_%H-%M-%S")), DOWNLOAD_FOLDER, FROM_EMAIL, TO_EMAIL, SENDGRID_API_KEY, CLIENT_JSON)
             print("Backup finished. Starting deleting old backups")
             delete_old_files(BACKUP_FOLDER, RETENTION_DAYS)
-            print("Finishing deleting old backups. See ya tomorrow at ", HOUR, " ", MINUTE)
+            print("Finishing deleting old backups. See ya tomorrow")
         time.sleep(10)
