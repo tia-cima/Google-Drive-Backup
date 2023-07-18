@@ -117,7 +117,7 @@ Before running the script, ensure that you have the following prerequisites:
        - You can click on the "info" button to see more details.
        - You can also save you current data by clicking on "save configuration" and selecting the json file path. IMPORTANT! Store this file in a secure location because it can contain sensitive data. I recommend storing it in the same directory as client.json and token.pickle, I'll explain later.
        - You can also load a different configuration by clicking on "load configuration". The input fields will be filled.
-       - When your selected input fields are filled, you can click on "start backup". A new terminal window will open, showing the backup status or possible errors.
+       - When your selected input fields are filled, you can click on "start backup" and then click on "ok". A new terminal window will open, showing the backup status or possible errors.
        - Don't close any of these two windows or the backup process will stop. 
 
     2. **Using CLI**:
